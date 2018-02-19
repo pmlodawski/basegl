@@ -96,6 +96,13 @@ export class Canvas
       else        "sdf_circle(p,#{g_r}, #{GLSL.toCode angle})"
     @defShape glsl, bb
 
+  pie: (angle) ->
+    g_a  = GLSL.toCode angle
+    g_0  = GLSL.toCode 0
+    bb   = "bbox_new(#{g_0},#{g_0})"
+    glsl = "sdf_pie(p,#{g_a})"
+    @defShape glsl, bb
+
   rect: (w,h, rs...) ->
     g_w  = GLSL.toCode w
     g_h  = GLSL.toCode h
@@ -215,6 +222,10 @@ export class Rect extends Shape
   renderGLSL: (r) -> r.canvas.rect @width, @height, @radiuses...
 export rect = consAlias Rect
 
+export class Pie extends Shape
+  constructor: (@angle) -> super()
+  renderGLSL: (r) -> r.canvas.pie @angle
+export pie = consAlias Pie
 
 
 ##############
