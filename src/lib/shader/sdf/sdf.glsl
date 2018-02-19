@@ -666,8 +666,9 @@ float newIDLayer (float a, float i) {
     return (a <= 0.0) ? i : 0.0;
 }
 
-int id_union      (float a, float b, int ida, int idb) { return (b <= 0.0) ? idb : ida; }
-int id_difference (float a, float b, int ida)          { return (sdf_difference(a,b) <= 0.0) ? ida : 0 ; }
+int id_union        (float a, float b, int ida, int idb) { return (b <= 0.0) ? idb : ida; }
+int id_difference   (float a, float b, int ida)          { return (sdf_difference(a,b) <= 0.0) ? ida : 0 ; }
+int id_intersection (float a, float b, int ida)          { return ((a <= 0.0) && (b <= 0.0)) ? ida : 0 ; }
 
 
 vec4 bbox_new (float w, float h) {
