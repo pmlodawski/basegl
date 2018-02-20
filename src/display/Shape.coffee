@@ -63,6 +63,10 @@ export class Canvas
     @addCodeLine "int #{mkIDName name} = id_union(#{a.name}, #{b.name}, #{a.idName}, #{b.idName});"
     null
 
+  intersectIDLayers: (a,b) => (name) =>
+    @addCodeLine "int #{mkIDName name} = id_intersection(#{a.name}, #{b.name}, #{a.idName});"
+    null
+
   diffIDLayers: (a,b) => (name) =>
     @addCodeLine "int #{mkIDName name} = id_difference(#{a.name}, #{b.name}, #{a.idName});"
     null
@@ -96,6 +100,13 @@ export class Canvas
       else        "sdf_circle(p,#{g_r}, #{GLSL.toCode angle})"
     @defShape glsl, bb
 
+  pie: (angle) ->
+    g_a  = GLSL.toCode angle
+    g_0  = GLSL.toCode 0
+    bb   = "bbox_new(#{g_0},#{g_0})"
+    glsl = "sdf_pie(p,#{g_a})"
+    @defShape glsl, bb
+
   rect: (w,h, rs...) ->
     g_w  = GLSL.toCode w
     g_h  = GLSL.toCode h
@@ -117,8 +128,9 @@ export class Canvas
     glsl = "sdf_quadraticCurve(p, vec2(#{g_cx},#{g_cy}), vec2(#{g_x},#{g_y}));"
     @defShape glsl, bb
 
-  union:         (s1,s2)   -> @defShape "sdf_union(#{s1.name},#{s2.name})"      , "bbox_union(#{s1.bbName},#{s2.bbName})"    , "color_mergeLCH(#{s1.name},#{s2.name},#{s1.cdName},#{s2.cdName})", @mergeIDLayers(s1,s2)
+  union:         (s1,s2)   -> @defShape "sdf_union(#{s1.name},#{s2.name})"       , "bbox_union(#{s1.bbName},#{s2.bbName})"    , "color_mergeLCH(#{s1.name},#{s2.name},#{s1.cdName},#{s2.cdName})", @mergeIDLayers(s1,s2)
   unionRound:    (r,s1,s2) -> @defShape "sdf_unionRound(#{s1.name},#{s2.name},#{GLSL.toCode r})"      , "bbox_union(#{s1.bbName},#{s2.bbName})"    , "color_mergeLCH(#{s1.name},#{s2.name},#{s1.cdName},#{s2.cdName})", @mergeIDLayers(s1,s2)
+  intersection:  (s1,s2)   -> @defShape "sdf_intersection(#{s1.name},#{s2.name})", "bbox_union(#{s1.bbName},#{s2.bbName})"    , "color_mergeLCH(#{s1.name},#{s2.name},#{s1.cdName},#{s2.cdName})", @intersectIDLayers(s1,s2)
   difference:    (s1,s2)   -> @defShape "sdf_difference(#{s1.name},#{s2.name})" , "bbox_union(#{s1.bbName},#{s2.bbName})"    , s1.cdName, @diffIDLayers(s1,s2)
   grow:          (s1,r)    -> @defShape "sdf_grow(#{GLSL.toCode r},#{s1.name})" , "bbox_grow(#{GLSL.toCode r},#{s1.bbName})" , s1.cdName
   outside:       (s1)      -> @defShape "sdf_removeInside(#{s1.name})"          , s1.bbName                                  , s1.cdName
@@ -196,6 +208,7 @@ export class Shape extends Composable
 
   TypeClass.implement @, M.add, (args...) -> @add args...
   TypeClass.implement @, M.sub, (args...) -> @sub args...
+  TypeClass.implement @, M.mul, (args...) -> @mul args...
 
   @getter 'bbox', -> @_bbox
 
@@ -215,6 +228,10 @@ export class Rect extends Shape
   renderGLSL: (r) -> r.canvas.rect @width, @height, @radiuses...
 export rect = consAlias Rect
 
+export class Pie extends Shape
+  constructor: (@angle) -> super()
+  renderGLSL: (r) -> r.canvas.pie @angle
+export pie = consAlias Pie
 
 
 ##############
@@ -274,6 +291,14 @@ export class Union extends Shape
     fold (r.canvas.union.bind r.canvas), rs
 Shape::union = protoBindCons Union
 export union = consAlias Union
+
+export class Intersection extends Shape
+  constructor: (@shapes...) -> super(); @addChildren @shapes...
+  renderGLSL: (r) ->
+    rs = r.renderShapes @shapes...
+    fold (r.canvas.intersection.bind r.canvas), rs
+Shape::intersection = protoBindCons Intersection
+export intersection = consAlias Intersection
 
 export class UnionRound extends Shape
   constructor: (@radius, @shapes...) -> super(); @addChildren @shapes...
@@ -424,6 +449,7 @@ Shape.getter 'alignedB' , -> alignB @
 
 Shape::sub = (args...) -> @.difference args...
 Shape::add = (args...) -> @.union args...
+Shape::mul = (args...) -> @.intersection args...
 
 
 export class GLSLRenderer

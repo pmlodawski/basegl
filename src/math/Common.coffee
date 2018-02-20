@@ -55,6 +55,10 @@ export bindNumFunc = (name, fnative=null) ->
     if Reflect.areNumbers args then fnative args...
     else GLSL.call name, (GLSL.toCode arg for arg in args)
 
+export bindNumConst = (name, fnative=null) ->
+  if not fnative then fnative = Math[name]
+  GLSL.toCode fnative
+
 export abs    = bindNumFunc 'abs'
 export atan   = bindNumFunc 'atan'
 export ceil   = bindNumFunc 'ceil'
@@ -65,6 +69,7 @@ export log    = bindNumFunc 'log'
 export log10  = bindNumFunc 'log10'
 export max    = bindNumFunc 'max'
 export min    = bindNumFunc 'min'
+export PI     = bindNumConst 'PI'
 export pow    = bindNumFunc 'pow'
 export random = bindNumFunc 'random'
 export round  = bindNumFunc 'round'
